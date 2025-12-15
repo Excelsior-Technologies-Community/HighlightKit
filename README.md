@@ -85,16 +85,6 @@ Each selected word is wrapped in a capsule-like background indicating its highli
 
 Notes remain saved even after restarting the app.
 
----
-
-## 📐 How It Works
-
-* The paragraph is tokenized into semantic words
-* Words are measured using UIFont metrics
-* Lines are constructed to match native text wrapping
-* Each word is rendered individually
-* Tap & long-press gestures give full control
-* Highlights + notes are stored using `Codable` in `UserDefaults`
 
 ---
 
