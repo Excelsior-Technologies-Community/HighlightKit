@@ -116,11 +116,13 @@ public struct HighlightContainer: View {
 
     @EnvironmentObject var manager: HighlightManager
     let text: String
-    private var words: [String] { text.split(separator: " ").map(String.init) }
+    private var words: [String] { tokenize(text) }
+
 
     public var body: some View {
         VStack(alignment: .leading) {
-            LineWrappedText(words: words, spacing: 6) { word in
+            // MARK: - CHANGE: Removed 'spacing: 3' from LineWrappedText init
+            LineWrappedText(words: words) { word in
                 wordView(for: word)
             }
         }
@@ -135,9 +137,11 @@ public struct HighlightContainer: View {
     // ------------------------------------------------------------
     private func wordView(for word: String) -> some View {
         Text(word)
-            .padding(4)
+            .padding(2)
+//            .frame(maxWidth: .infinity)
             .background((manager.colorFor(word) ?? .clear).opacity(0.35))
             .cornerRadius(4)
+            .padding(.leading,2)
             .overlay(
                 Group {
                     if manager.noteFor(word) != nil {
@@ -228,19 +232,43 @@ public struct HighlightContainer: View {
 // ------------------------------------------------------------
 // MARK: - TEXT WRAPPING ENGINE (Correct Words Layout)
 // ------------------------------------------------------------
+private func tokenize(_ text: String) -> [String] {
+    var words: [String] = []
+    var current = ""
+
+    for scalar in text.unicodeScalars {
+        if CharacterSet.whitespacesAndNewlines.contains(scalar) {
+            // end word
+            if !current.isEmpty { words.append(current) }
+            current = ""
+        }
+        else if CharacterSet.punctuationCharacters.contains(scalar) == false {
+            // normal visible character
+            current.unicodeScalars.append(scalar)
+        }
+        else {
+            // punctuation should become part of the same chunk
+            current.unicodeScalars.append(scalar)
+        }
+    }
+
+    if !current.isEmpty {
+        words.append(current)
+    }
+
+    return words
+}
 
 public struct LineWrappedText<WordView: View>: View {
 
     let words: [String]
-    let spacing: CGFloat
+    // MARK: - CHANGE: Removed spacing property
     let wordView: (String) -> WordView
 
     public init(words: [String],
-                spacing: CGFloat = 6,
+                // MARK: - CHANGE: Removed spacing parameter from init
                 @ViewBuilder wordView: @escaping (String) -> WordView) {
         self.words = words
-        self.spacing = spacing
-
         self.wordView = wordView
     }
 
@@ -255,27 +283,38 @@ public struct LineWrappedText<WordView: View>: View {
 
         var currentWidth: CGFloat = 0
         var lines: [[String]] = [[]]
+        
+        // MARK: - CHANGE: Defined fixed spacing values
+        let interWordSpacing: CGFloat = 4.0 // Minimal space to separate words
+        let interLineSpacing: CGFloat = 0.0 // No extra space between lines
 
+        // In wordView, there is a padding of 4 points on all sides, contributing 8 to the width.
+        // The calculated width must also include the space that follows the word (interWordSpacing),
+        // which was missing in the original logic.
         let widths: [String: CGFloat] = words.reduce(into: [:]) { r, w in
-            let wWidth = w.width(usingFont: .systemFont(ofSize: 17)) + 16
-            r[w] = wWidth
+            let wWidthWithPadding = w.width(usingFont: .systemFont(ofSize: 17)) + 8
+            r[w] = wWidthWithPadding + interWordSpacing
         }
 
         for word in words {
-            let w = widths[word] ?? 0
+            let wWithGap = widths[word] ?? 0 // width of word + padding + interWordSpacing
 
-            if currentWidth + w > maxWidth {
+            // Correction to wrapping logic: check if word+gap fits
+            if currentWidth + wWithGap > maxWidth {
+                // Start a new line
                 lines.append([word])
-                currentWidth = w
+                currentWidth = wWithGap
             } else {
+                // Append to current line and update width
                 lines[lines.count - 1].append(word)
-                currentWidth += w
+                currentWidth += wWithGap
             }
         }
 
-        return VStack(alignment: .leading, spacing: spacing) {
+        // MARK: - CHANGE: Set VStack and HStack spacing to fixed values (0 and 4.0)
+        return VStack(alignment: .leading, spacing: interLineSpacing) {
             ForEach(lines, id: \.self) { line in
-                HStack(spacing: spacing) {
+                HStack(spacing: interWordSpacing) {
                     ForEach(line, id: \.self) { w in
                         wordView(w)
                     }
