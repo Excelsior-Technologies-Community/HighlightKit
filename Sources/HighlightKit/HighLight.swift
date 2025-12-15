@@ -183,7 +183,8 @@ public struct HighlightContainer: View {
                     }
                 }
                 .padding()
-                .background(.ultraThinMaterial)
+                .background(Color(.systemBackground).opacity(0.85))
+
                 .cornerRadius(12)
                 .padding()
             }
@@ -216,7 +217,8 @@ public struct HighlightContainer: View {
                 }
                 .padding()
                 .frame(width: 260)
-                .background(.regularMaterial)
+                .background(Color(.systemBackground).opacity(0.95))
+
                 .cornerRadius(12)
             }
         }
@@ -237,7 +239,8 @@ public struct LineWrappedText<WordView: View>: View {
                 spacing: CGFloat = 6,
                 @ViewBuilder wordView: @escaping (String) -> WordView) {
         self.words = words
-        this.spacing = spacing
+        self.spacing = spacing
+
         self.wordView = wordView
     }
 
