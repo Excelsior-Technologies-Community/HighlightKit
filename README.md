@@ -75,16 +75,7 @@ Each selected word is wrapped in a capsule-like background indicating its highli
 
 ---
 
-## 📝 Notes System
-
-* Long-press any word
-* Type a note
-* Press **Save**
-* HighlightKit stores it automatically
-* Tap that word again → note opens instantly
-
-Notes remain saved even after restarting the app.
-
+ 
 
 ---
 
