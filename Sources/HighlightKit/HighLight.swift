@@ -1,3 +1,11 @@
+//
+//  HighLight.swift
+//  DeliveryTrackingSystem
+//
+//  Created by Noman belim on 18/12/25.
+//
+
+import Foundation
 import SwiftUI
 
 // ------------------------------------------------------------
@@ -24,8 +32,7 @@ public struct TextHighlight: Identifiable, Codable, Hashable {
 
 // ------------------------------------------------------------
 // MARK: - VIEW MODEL: Highlight Manager (Persistent)
-// ------------------------------------------------------------
-
+// ---------------------------------------------
 public class HighlightManager: ObservableObject {
 
     @Published public var highlights: [TextHighlight] = [] {
@@ -43,7 +50,6 @@ public class HighlightManager: ObservableObject {
         loadHighlights()
     }
 
-    // Highlight a word
     public func highlightWord(_ word: String, color: Color) {
         if let idx = highlights.firstIndex(where: { $0.word == word }) {
             highlights[idx].colorHex = color.toHex()
@@ -52,26 +58,24 @@ public class HighlightManager: ObservableObject {
         }
     }
 
-    // Save note
+    // ✅ REMOVE HIGHLIGHT
+    public func removeHighlight(for word: String) {
+        highlights.removeAll { $0.word == word }
+    }
+
     public func saveNote(for word: String) {
         if let idx = highlights.firstIndex(where: { $0.word == word }) {
             highlights[idx].note = noteText
         }
     }
 
-    // Lookup for color
     public func colorFor(_ word: String) -> Color? {
         highlights.first(where: { $0.word == word })?.color
     }
 
-    // Lookup for note
     public func noteFor(_ word: String) -> String? {
         highlights.first(where: { $0.word == word })?.note
     }
-
-    // ------------------------------------------------------------
-    // MARK: - Persistence
-    // ------------------------------------------------------------
 
     private func saveHighlights() {
         if let data = try? JSONEncoder().encode(highlights) {
@@ -86,7 +90,14 @@ public class HighlightManager: ObservableObject {
         else { return }
         highlights = saved
     }
+    
+
+      // ✅ Remove all highlights
+      public func clearAllHighlights() {
+          highlights.removeAll()
+      }
 }
+
 
 // ------------------------------------------------------------
 // MARK: - PUBLIC MODIFIER API
@@ -163,37 +174,49 @@ public struct HighlightContainer: View {
                 manager.showNoteEditor = true
             }
     }
-
-    // ------------------------------------------------------------
-    // MARK: Color Picker Overlay
-    // ------------------------------------------------------------
+    
     private var colorPickerOverlay: some View {
         Group {
             if manager.showColorPicker {
-                HStack {
-                    ForEach([Color.yellow, .green, .pink, .blue], id: \.self) { c in
-                        Circle()
-                            .fill(c)
-                            .frame(width: 28, height: 28)
-                            .onTapGesture {
-                                if let w = manager.selectedWord {
-                                    manager.highlightWord(w, color: c)
+                VStack(spacing: 12) {
+
+                    HStack {
+                        ForEach([Color.yellow, .green, .pink, .blue], id: \.self) { c in
+                            Circle()
+                                .fill(c)
+                                .frame(width: 28, height: 28)
+                                .onTapGesture {
+                                    if let w = manager.selectedWord {
+                                        manager.highlightWord(w, color: c)
+                                    }
+                                    manager.showColorPicker = false
                                 }
-                                manager.showColorPicker = false
-                            }
+                        }
                     }
+
+                    // ✅ REMOVE HIGHLIGHT
+                    if let w = manager.selectedWord,
+                       manager.colorFor(w) != nil {
+
+                        Button("Remove Highlight", role: .destructive) {
+                            manager.removeHighlight(for: w)
+                            manager.showColorPicker = false
+                        }
+                    }
+
                     Button("Cancel") {
                         manager.showColorPicker = false
                     }
                 }
                 .padding()
-                .background(Color(.systemBackground).opacity(0.85))
-
+                .background(Color(.systemBackground).opacity(0.9))
                 .cornerRadius(12)
                 .padding()
             }
         }
     }
+
+
 
     // ------------------------------------------------------------
     // MARK: Note Editor Popup
@@ -363,3 +386,4 @@ extension Color {
         self.init(red: r, green: g, blue: b)
     }
 }
+ 
